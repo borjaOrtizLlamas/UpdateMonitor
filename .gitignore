@@ -1,0 +1,15 @@
+# Binaries
+updatemonitor
+*.exe
+
+# Config with secrets
+.env
+config.yaml
+
+# Go build cache
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp

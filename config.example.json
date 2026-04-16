@@ -1,0 +1,43 @@
+{
+  "server": {
+    "port": 8080,
+    "admin_key": ""
+  },
+  "storage": {
+    "provider": "s3",
+    "bucket": "",
+    "region": "us-east-1",
+    "prefix": "updatemonitor/",
+    "endpoint": ""
+  },
+  "github": {
+    "token": ""
+  },
+  "gitlab": {
+    "base_url": "https://gitlab.com",
+    "token": ""
+  },
+  "ai": {
+    "provider": "claude",
+    "api_key": "",
+    "model": "claude-sonnet-4-6"
+  },
+  "notifier": {
+    "slack": {
+      "webhook_url": ""
+    },
+    "email": {
+      "smtp_host": "",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_address": ""
+    }
+  },
+  "auth": {
+    "enabled": true
+  },
+  "scheduler": {
+    "check_interval": "*/30 * * * *"
+  }
+}

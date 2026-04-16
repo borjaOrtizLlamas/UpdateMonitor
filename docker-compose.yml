@@ -1,0 +1,58 @@
+version: "3.9"
+
+# ── Development compose ───────────────────────────────────────────────────────
+# Uses LocalStack as a local S3 replacement so you can develop without AWS.
+# Run: docker compose up
+# Then open http://localhost:8080
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Server
+      SERVER_PORT: "8080"
+      SERVER_ADMIN_KEY: "dev-secret"
+
+      # Storage — point at local LocalStack
+      S3_BUCKET: "updatemonitor-dev"
+      S3_REGION: "us-east-1"
+      S3_ENDPOINT: "http://localstack:4566"
+
+      # GitHub token (optional — increases rate limits)
+      # GITHUB_TOKEN: ""
+
+      # AI — set your key here or via .env file
+      # AI_API_KEY: ""
+
+      # Notifications (optional for dev)
+      # SLACK_WEBHOOK_URL: ""
+    depends_on:
+      localstack:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      # Mount web assets for hot-reload during development
+      - ./web:/app/web:ro
+
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  localstack-data:

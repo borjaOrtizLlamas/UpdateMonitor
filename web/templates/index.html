@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UpdateMonitor</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <span>UpdateMonitor</span>
+    </div>
+    <div class="topbar-actions">
+      <span id="last-updated" class="subtle"></span>
+      <button id="btn-refresh" class="btn btn-ghost" title="Refresh now">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+          <path d="M8 16H3v5"/>
+        </svg>
+      </button>
+      <button id="btn-add" class="btn btn-primary">+ Add project</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="summary-bar" class="summary-bar hidden">
+      <div class="summary-item" id="sum-total">
+        <span class="summary-num">0</span>
+        <span class="summary-label">tracked</span>
+      </div>
+      <div class="summary-item update" id="sum-updates">
+        <span class="summary-num">0</span>
+        <span class="summary-label">updates</span>
+      </div>
+      <div class="summary-item important" id="sum-important">
+        <span class="summary-num">0</span>
+        <span class="summary-label">important</span>
+      </div>
+      <div class="summary-item vuln" id="sum-cves">
+        <span class="summary-num">0</span>
+        <span class="summary-label">with CVEs</span>
+      </div>
+    </div>
+
+    <div id="project-grid" class="project-grid"></div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+      <p>No projects tracked yet.<br>Click <strong>+ Add project</strong> to get started.</p>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+    </div>
+  </main>
+
+  <!-- Add Project Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Add project</h2>
+        <button id="btn-modal-close" class="btn btn-ghost" aria-label="Close">&times;</button>
+      </div>
+      <form id="form-add-project" autocomplete="off">
+        <div class="field">
+          <label for="f-url">Repository URL <span class="required">*</span></label>
+          <input type="url" id="f-url" name="url" placeholder="https://github.com/owner/repo" required />
+          <span class="hint">GitHub or GitLab public repository</span>
+        </div>
+        <div class="field">
+          <label for="f-version">Your current version <span class="required">*</span></label>
+          <input type="text" id="f-version" name="current_version" placeholder="v1.2.3" required />
+        </div>
+        <div class="field">
+          <label for="f-name">Display name <span class="optional">(optional)</span></label>
+          <input type="text" id="f-name" name="name" placeholder="Inferred from URL" />
+        </div>
+        <div class="field">
+          <label>Notifications <span class="optional">(optional)</span></label>
+          <div class="notif-row">
+            <select id="f-notif-type" class="select-sm">
+              <option value="">None</option>
+              <option value="email">Email</option>
+              <option value="slack">Slack webhook</option>
+            </select>
+            <input type="text" id="f-notif-address" class="input-sm" placeholder="address / URL" />
+          </div>
+        </div>
+
+        <!-- CVE / Advanced -->
+        <div class="field">
+          <button type="button" id="btn-advanced-toggle" class="btn-link">
+            + CVE vulnerability scanning <span class="optional">(optional)</span>
+          </button>
+        </div>
+        <div id="advanced-fields" class="hidden">
+          <div class="field">
+            <label for="f-ecosystem">Ecosystem</label>
+            <input type="text" id="f-ecosystem" name="ecosystem" placeholder="Go, npm, PyPI, Maven, cargo…" />
+            <span class="hint">OSV.dev ecosystem identifier — see <strong>osv.dev</strong> for supported values</span>
+          </div>
+          <div class="field">
+            <label for="f-package">Package name</label>
+            <input type="text" id="f-package" name="package_name" placeholder="e.g. github.com/foo/bar or lodash" />
+          </div>
+        </div>
+
+        <div id="form-error" class="form-error hidden"></div>
+        <div class="modal-footer">
+          <button type="button" id="btn-modal-cancel" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="btn-modal-submit" class="btn btn-primary">Add &amp; track</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Project Detail Drawer -->
+  <div id="drawer-overlay" class="drawer-overlay hidden">
+    <div id="drawer" class="drawer" role="complementary">
+      <div class="drawer-header">
+        <h3 id="drawer-title">Project details</h3>
+        <button id="btn-drawer-close" class="btn btn-ghost" aria-label="Close">&times;</button>
+      </div>
+      <div id="drawer-body" class="drawer-body"></div>
+      <div class="drawer-footer">
+        <!-- Update actions — shown only when relevant -->
+        <div id="drawer-update-actions" class="drawer-update-actions hidden">
+          <button id="btn-confirm-update" class="btn btn-success">
+            ✓ Mark as updated
+          </button>
+          <button id="btn-snooze" class="btn btn-ghost">
+            Snooze this version
+          </button>
+        </div>
+        <!-- Snooze active -->
+        <div id="drawer-snooze-actions" class="drawer-snooze-actions hidden">
+          <button id="btn-unsnooze" class="btn btn-ghost">Unsnooze</button>
+        </div>
+        <button id="btn-drawer-delete" class="btn btn-danger">Remove project</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
