@@ -11,20 +11,21 @@ import (
 	"time"
 
 	anthropic "github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
 
 	"github.com/bortizllamas/updatemonitor/internal/domain"
 )
 
 // Analyzer is the Claude-backed AI adapter.
 type Analyzer struct {
-	client *anthropic.Client
+	client anthropic.Client
 	model  string
 }
 
 // New creates an Analyzer using the provided API key and model name.
 func New(apiKey, model string) *Analyzer {
 	client := anthropic.NewClient(
-		anthropic.WithAPIKey(apiKey),
+		option.WithAPIKey(apiKey),
 	)
 	if model == "" {
 		model = "claude-sonnet-4-6"
@@ -116,7 +117,7 @@ func parseResponse(raw string) (*analysisResponse, error) {
 	return &r, nil
 }
 
-func extractText(blocks []anthropic.ContentBlock) string {
+func extractText(blocks []anthropic.ContentBlockUnion) string {
 	var parts []string
 	for _, b := range blocks {
 		if tb, ok := b.AsText(); ok {
