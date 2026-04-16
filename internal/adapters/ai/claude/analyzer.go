@@ -120,7 +120,7 @@ func parseResponse(raw string) (*analysisResponse, error) {
 func extractText(blocks []anthropic.ContentBlockUnion) string {
 	var parts []string
 	for _, b := range blocks {
-		if tb, ok := b.AsText(); ok {
+		if tb := b.AsText(); tb.Type == "text" {
 			parts = append(parts, tb.Text)
 		}
 	}
