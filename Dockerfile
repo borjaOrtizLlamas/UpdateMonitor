@@ -3,6 +3,8 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
+RUN apk add --no-cache git
+
 # Copy source and resolve dependencies
 COPY . .
 RUN go mod tidy && go mod download
