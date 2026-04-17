@@ -1,5 +1,9 @@
 # ── Build stage ───────────────────────────────────────────────────────────────
-FROM golang:1.23-alpine AS builder
+# TARGETARCH is injected by Docker BuildKit automatically (amd64, arm64, etc.)
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
+
+ARG TARGETOS=linux
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -9,8 +13,8 @@ RUN apk add --no-cache git
 COPY . .
 RUN go mod tidy && go mod download
 
-# Build a statically linked binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+# Build a statically linked binary for the target platform
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags="-s -w" -o /app/updatemonitor ./cmd/server
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
