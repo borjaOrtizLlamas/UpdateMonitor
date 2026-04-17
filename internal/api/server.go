@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -16,13 +17,18 @@ import (
 type Server struct {
 	svc    *service.ProjectService
 	cfg    *config.Config
+	log    *slog.Logger
 	router chi.Router
 }
 
 // New creates an HTTP server and registers all routes.
-func New(svc *service.ProjectService, cfg *config.Config) *Server {
-	s := &Server{svc: svc, cfg: cfg}
+func New(svc *service.ProjectService, cfg *config.Config, log *slog.Logger) *Server {
+	s := &Server{svc: svc, cfg: cfg, log: log}
 	s.router = s.buildRouter()
+	log.Debug("api: router built",
+		"admin_key_set", cfg.Server.AdminKey != "",
+		"port", cfg.Server.Port,
+	)
 	return s
 }
 
@@ -35,7 +41,6 @@ func (s *Server) Addr() string { return fmt.Sprintf(":%d", s.cfg.Server.Port) }
 func (s *Server) buildRouter() chi.Router {
 	r := chi.NewRouter()
 
-	// Global middleware
 	r.Use(middleware.RealIP)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
@@ -47,25 +52,18 @@ func (s *Server) buildRouter() chi.Router {
 		AllowCredentials: false,
 	}))
 
-	// Health probe — always public
 	r.Get("/healthz", healthz)
-
-	// Static frontend assets
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
-
-	// SPA / dashboard
 	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "web/templates/index.html")
 	})
 
-	// Public read API
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/projects", s.listProjects)
 		r.Get("/projects/{id}", s.getProject)
 
-		// Admin-protected write API
 		r.Group(func(r chi.Router) {
-			r.Use(AdminOnly(s.cfg.Server.AdminKey))
+			r.Use(AdminOnly(s.cfg.Server.AdminKey, s.log))
 			r.Post("/projects", s.addProject)
 			r.Delete("/projects/{id}", s.deleteProject)
 			r.Post("/projects/{id}/confirm-update", s.confirmUpdate)

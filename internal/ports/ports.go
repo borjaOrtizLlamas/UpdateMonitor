@@ -27,6 +27,11 @@ type VersionTracker interface {
 	// has not yet applied (i.e. currentVersion → latestVersion).
 	Changelog(ctx context.Context, owner, repo, fromTag, toTag string) (string, error)
 
+	// AllChanges returns every release body and commit message between fromTag
+	// (exclusive) and toTag (inclusive). Used to scan the full update range for
+	// CVE mentions in release announcements and commit messages.
+	AllChanges(ctx context.Context, owner, repo, fromTag, toTag string) ([]domain.ReleaseInfo, error)
+
 	// Platform returns which hosting platform this tracker handles.
 	Platform() domain.Platform
 }
@@ -53,4 +58,8 @@ type CVEChecker interface {
 	// Check returns known CVEs for the given ecosystem, package, and version.
 	// Returns an empty slice (not an error) when no vulnerabilities are found.
 	Check(ctx context.Context, ecosystem, packageName, version string) ([]domain.CVE, error)
+
+	// LookupByID fetches details for a specific CVE or GHSA identifier.
+	// Returns nil, nil when the ID is not found in the database.
+	LookupByID(ctx context.Context, id string) (*domain.CVE, error)
 }

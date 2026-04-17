@@ -10,6 +10,14 @@ type VersionInfo struct {
 	Body        string    `json:"body,omitempty"` // raw release notes / changelog
 }
 
+// ReleaseInfo holds a single release's notes and the commit messages it contains.
+// Used to scan the full update range for CVE mentions.
+type ReleaseInfo struct {
+	Tag     string   // release tag / version string
+	Body    string   // release notes / announcement body
+	Commits []string // commit messages included in this release
+}
+
 // VersionDiff represents the delta between two versions.
 type VersionDiff struct {
 	ProjectID string `json:"project_id"`
