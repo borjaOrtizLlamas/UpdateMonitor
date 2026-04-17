@@ -1,7 +1,19 @@
+
+Still working on it, wait for seen good results. 
+:)
+
+-----------------------------------------
+
 # UpdateMonitor
 
 A self-hosted dashboard that monitors external software projects for new releases and tells you what changed — powered by Go, S3, and Claude AI.
 
+<p align="center">
+  <img src="images/example.png" alt="Dashboard Example" width="800"/>
+</p>
+<p align="center">
+  <img src="images/example2.png" alt="Dashboard Example" width="800"/>
+</p>
 ---
 
 ## What it does
@@ -20,14 +32,6 @@ You give it a list of GitHub or GitLab repositories and the version you are curr
 - Clean monitoring dashboard — dark theme, no heavy frontend frameworks
 - Admin-key protected write API, designed for future Keycloak integration
 - Docker-first: single container, LocalStack for local S3 in development
-
----
-
-## Screenshots
-
-> Dashboard showing tracked projects, status badges, and AI-generated summaries.
-
-*(add your own once running)*
 
 ---
 
